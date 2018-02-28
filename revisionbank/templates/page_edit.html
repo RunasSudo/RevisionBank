@@ -1,3 +1,4 @@
+{% extends 'page_base.html' %}
 {#
     RevisionBank
     Copyright © 2018  Yingtong Li (RunasSudo)
@@ -16,9 +17,6 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #}
 
-<div class="ui red segment">
-	<p><b>There is no page with this exact name.</b></p>
-	<ul class="ui list">
-		<li><a href="{{ url_for('page_edit', page_name=page.name) }}"><b>Create the {{ page.pretty_name }} page.</b></a></li>
-	</ul>
-</div>
+{% block content %}
+	
+{% endblock %}

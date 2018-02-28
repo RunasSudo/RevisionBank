@@ -33,6 +33,16 @@ def page_view(page_name):
 	if page_json is None:
 		page = revisionbank.page.Page404(name=page_name)
 	else:
-		page = revisionbank.page.Page(**page_json)
+		page = revisionbank.page.PageMarkdown(**page_json)
 	
 	return flask.render_template('page.html', page=page)
+
+@app.route('/page/<path:page_name>/edit')
+def page_edit(page_name):
+	page_json = mongo.db.pages.find_one({'name': page_name})
+	if page_json is None:
+		page = revisionbank.page.PageMarkdown(name=page_name)
+	else:
+		page = revisionbank.page.PageMarkdown(**page_json)
+	
+	return flask.render_template('page_edit.html', page=page)

@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'page_base.html' %}
 {#
     RevisionBank
     Copyright © 2018  Yingtong Li (RunasSudo)
@@ -17,25 +17,6 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #}
 
-{% block main %}
-	{% if '/' in page.name %}
-		<div class="ui breadcrumb">
-			{% for parent in page.name.split('/')[:-1] %}
-				<a class="section" href="{{ url_for('page_view', page_name='/'.join(page.name.split('/')[:loop.index0+1])) }}">{{ parent }}</a>
-				<i class="right angle icon divider"></i>
-			{% endfor %}
-		</div>
-	{% endif %}
-	
-	<h1 class="ui header">{{ page.pretty_name }}</h1>
-	
-	<div class="ui secondary pointing menu">
-		<a class="item active">Article</a>
-		<a class="item">Discussion</a>
-		<div class="right menu">
-			<a class="item"><i class="edit icon"></i>Edit</a>
-		</div>
-	</div>
-	
+{% block content %}
 	<p>{{ page.render_content() }}</p>
 {% endblock %}

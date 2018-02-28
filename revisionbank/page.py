@@ -27,7 +27,7 @@ class BasePage:
 
 class Page404(BasePage):
 	def render_content(self):
-		return jinja2.Markup(flask.render_template('page_404.html'))
+		return jinja2.Markup(flask.render_template('page_404.html', page=self))
 
 class PageMarkdown(BasePage):
 	pass
