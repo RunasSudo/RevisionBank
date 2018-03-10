@@ -39,7 +39,7 @@ class BasePage(MongoObject):
 
 class Page404(BasePage):
 	@property
-	def revision(self):
+	def revisions(self):
 		return [Revision404(self)]
 
 class Page(BasePage):
