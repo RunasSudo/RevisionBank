@@ -28,6 +28,16 @@
 				RevisionBank
 			</a>
 			<a href="/" class="item">Home</a>
+			{% if session.google_user %}
+				<div class="ui simple dropdown item right">
+					<i class="user circle icon"></i> {{ session.google_user.name }} <i class="dropdown icon"></i>
+					<div class="menu">
+						<a href="{{ url_for('logout') }}" class="item">Log out</a>
+					</div>
+				</div>
+			{% else %}
+				<a href="{{ url_for('login') }}" class="item right">Log in</a>
+			{% endif %}
 		</div>
 	</div>
 	

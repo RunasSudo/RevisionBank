@@ -18,5 +18,15 @@
 #}
 
 {% block content %}
-	
+	<form class="ui form" method="post">
+		<div class="field">
+			<label>Page content</label>
+			<textarea id="page-content" name="page-content" rows="10">{{ page.content }}</textarea>
+		</div>
+		<div class="field">
+			<label>Reason for edit</label>
+            <input id="edit-reason" name="edit-reason" type="text">
+		</div>
+		<input class="ui primary button" type="submit" value="Edit">
+	</form>
 {% endblock %}
