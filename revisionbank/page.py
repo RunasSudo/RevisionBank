@@ -38,8 +38,9 @@ class BasePage(MongoObject):
 		return {'name': self.name}
 
 class Page404(BasePage):
-	def render_content(self):
-		return jinja2.Markup(flask.render_template('page_404.html', page=self))
+	@property
+	def revision(self):
+		return [Revision404(self)]
 
 class Page(BasePage):
 	def __init__(self, _id=None, revisions=None, **kwargs):
@@ -47,9 +48,6 @@ class Page(BasePage):
 		if revisions is None:
 			revisions = []
 		self.revisions = revisions
-	
-	def render_content(self):
-		return self.revisions[-1].render_content()
 	
 	def to_json(self):
 		json_obj = super().to_json()
@@ -59,27 +57,33 @@ class Page(BasePage):
 	@classmethod
 	def from_json(cls, json_obj):
 		obj = Page(**json_obj)
-		obj.revisions = [RevisionMarkdown.from_json(r) for r in obj.revisions]
+		obj.revisions = [RevisionMarkdown.from_json(r, obj) for r in obj.revisions]
 		return obj
 
 class Revision(MongoObject):
-	def __init__(self, creator=None, creation_date=None, comment=None, reason=None):
+	def __init__(self, page=None, creator=None, creation_date=None, reason=None):
+		self.page = page
+		
 		self.creator = creator
 		self.creation_date = creation_date
-		self.comment = comment
 		self.reason = reason
 	
 	def to_json(self):
-		return {'creator': self.creator.to_json(), 'creation_date': self.creation_date.strftime('%Y-%m-%dT%H:%M:%SZ'), 'comment': self.comment, 'reason': self.reason}
+		return {'creator': self.creator.to_json(), 'creation_date': self.creation_date.strftime('%Y-%m-%dT%H:%M:%SZ'), 'reason': self.reason}
 	
 	@classmethod
-	def from_json(cls, json_obj):
+	def from_json(cls, json_obj, page=None):
 		import revisionbank.user
 		
 		obj = cls(**json_obj)
+		obj.page = page
 		obj.creator = revisionbank.user.GoogleUser.from_json(obj.creator)
 		obj.creation_date = pytz.utc.localize(datetime.strptime(json_obj['creation_date'], '%Y-%m-%dT%H:%M:%SZ'))
 		return obj
+
+class Revision404(Revision):
+	def render_content(self):
+		return jinja2.Markup(flask.render_template('page_404.html', page=self.page))
 
 def markup_delimtag(pattern, tag1, tag2, markup):
 	markup = markup.replace(jinja2.escape(pattern), jinja2.Markup('\ue000'))

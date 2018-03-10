@@ -24,3 +24,8 @@
 	margin: 5em 0em 0em;
 	padding: 5em 0em;
 }
+
+/* Fix nested selectable tables */
+.ui.table.selectable tr > td.selectable:hover {
+	background: initial !important;
+}

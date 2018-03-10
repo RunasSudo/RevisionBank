@@ -45,7 +45,9 @@ def page_view(page_name):
 	else:
 		page = revisionbank.page.Page.from_json(page_json)
 	
-	return flask.render_template('page.html', page=page)
+	revision = page.revisions[int(flask.request.args.get('revision', 0)) - 1]
+	
+	return flask.render_template('page.html', page=page, revision=revision)
 
 @app.route('/page/<path:page_name>/edit', methods=['GET', 'POST'])
 def page_edit(page_name):
@@ -71,6 +73,16 @@ def page_edit(page_name):
 		mongo.db.pages.replace_one({'name': page_name}, page.to_json(), upsert=True)
 		
 		return flask.redirect(flask.url_for('page_view', page_name=page_name))
+
+@app.route('/page/<path:page_name>/history')
+def page_history(page_name):
+	page_json = mongo.db.pages.find_one({'name': page_name})
+	if page_json is None:
+		page = revisionbank.page.Page404(name=page_name)
+	else:
+		page = revisionbank.page.Page.from_json(page_json)
+	
+	return flask.render_template('page_history.html', page=page)
 
 oauth = OAuth(app)
 google = oauth.remote_app(
