@@ -17,8 +17,9 @@
 from datetime import datetime
 import flask
 import jinja2
-import pytz
 import mwparserfromhell as mw
+import pytz
+import re
 
 class MongoObject:
 	@classmethod
@@ -80,6 +81,15 @@ class Revision(MongoObject):
 		obj.creation_date = pytz.utc.localize(datetime.strptime(json_obj['creation_date'], '%Y-%m-%dT%H:%M:%SZ'))
 		return obj
 
+def markup_delimtag(pattern, tag1, tag2, markup):
+	markup = markup.replace(jinja2.escape(pattern), jinja2.Markup('\ue000'))
+	markup = markup_resub(r'\ue000(.*?)\ue000', r'{0}\1{1}'.format(tag1, tag2), markup)
+	markup = markup.replace(jinja2.Markup('\ue000'), jinja2.escape(pattern))
+	return markup
+
+def markup_resub(pattern, repl, markup):
+	return jinja2.Markup(re.sub(pattern, repl, str(markup)))
+
 class RevisionMarkdown(Revision):
 	def __init__(self, content=None, **kwargs):
 		super().__init__(**kwargs)
@@ -88,6 +98,9 @@ class RevisionMarkdown(Revision):
 	def render_node(self, node):
 		if isinstance(node, mw.nodes.text.Text):
 			markup = jinja2.escape(node.value)
+			markup = markup_delimtag('***', '<b><i>', '</i></b>', markup)
+			markup = markup_delimtag('**', '<b>', '</b>', markup)
+			markup = markup_delimtag('*', '<i>', '</i>', markup)
 		elif isinstance(node, mw.wikicode.Wikicode):
 			markup = jinja2.Markup()
 			for subnode in node.ifilter():
