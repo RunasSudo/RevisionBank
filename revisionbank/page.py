@@ -84,6 +84,10 @@ class Revision(MongoObject):
 class Revision404(Revision):
 	def render_content(self):
 		return jinja2.Markup(flask.render_template('page_404.html', page=self.page))
+	
+	@property
+	def content(self):
+		return ''
 
 def markup_delimtag(pattern, tag1, tag2, markup):
 	markup = markup.replace(jinja2.escape(pattern), jinja2.Markup('\ue000'))

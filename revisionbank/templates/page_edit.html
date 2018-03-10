@@ -21,7 +21,7 @@
 	<form class="ui form" method="post">
 		<div class="field">
 			<label>Page content</label>
-			<textarea id="page-content" name="page-content" rows="10">{{ page.content }}</textarea>
+			<textarea id="page-content" name="page-content" rows="10">{{ page.revisions[-1].content }}</textarea>
 		</div>
 		<div class="field">
 			<label>Reason for edit</label>
