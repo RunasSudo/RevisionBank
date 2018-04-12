@@ -29,11 +29,12 @@
 		</thead>
 		<tbody>
 			{% for revision in page.revisions|reverse %}
+				{% set index = page.revisions|length - loop.index0 %}
 				<tr>
-					<td class="selectable"><a href="{{ url_for('page_view', page_name=page.name, revision=loop.revindex) }}">{{ loop.revindex }}</a></td>
-					<td class="selectable"><a href="{{ url_for('page_view', page_name=page.name, revision=loop.revindex) }}">{{ revision.creation_date.strftime('%Y-%m-%d %H:%M UTC') }}</a></td>
-					<td class="selectable"><a href="{{ url_for('page_view', page_name=page.name, revision=loop.revindex) }}">{{ revision.creator.name }}</a></td>
-					<td class="selectable"><a href="{{ url_for('page_view', page_name=page.name, revision=loop.revindex) }}">{{ revision.reason }}</a></td>
+					<td class="selectable"><a href="{{ url_for('page_view', page_name=page.name, revision=index) }}">{{ index }}</a></td>
+					<td class="selectable"><a href="{{ url_for('page_view', page_name=page.name, revision=index) }}">{{ revision.creation_date.strftime('%Y-%m-%d %H:%M UTC') }}</a></td>
+					<td class="selectable"><a href="{{ url_for('page_view', page_name=page.name, revision=index) }}">{{ revision.creator.name }}</a></td>
+					<td class="selectable"><a href="{{ url_for('page_view', page_name=page.name, revision=index) }}">{{ revision.reason }}</a></td>
 				</tr>
 			{% endfor %}
 		</tbody>
