@@ -18,6 +18,7 @@
 #}
 
 {% block main %}
-	<h1 class="ui header">Semantic UI Fixed Template</h1>
-	<p>This is a basic fixed menu template using fixed size containers.</p>
+	{{ revision.render_content() }}
+	
+	<p style="text-align:right;"><small><a href="{{ url_for('page_view', page_name=page.name) }}">Page information</a></small></p>
 {% endblock %}

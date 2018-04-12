@@ -105,7 +105,7 @@ class RevisionMarkdown(Revision):
 	
 	def render_node(self, node):
 		if isinstance(node, mw.nodes.text.Text):
-			markup = jinja2.escape(node.value)
+			markup = jinja2.Markup('<p>') + jinja2.escape(node.value) + jinja2.Markup('</p>')
 			markup = markup_delimtag('***', '<b><i>', '</i></b>', markup)
 			markup = markup_delimtag('**', '<b>', '</b>', markup)
 			markup = markup_delimtag('*', '<i>', '</i>', markup)
