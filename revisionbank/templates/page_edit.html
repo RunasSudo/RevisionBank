@@ -18,6 +18,12 @@
 #}
 
 {% block content %}
+	{% if not session.google_user %}
+		<div class="ui error message">
+			You do not have permission to edit this page. Please <a href="{{ url_for('login') }}">log in</a>.
+		</div>
+	{% endif %}
+	
 	<form class="ui form" method="post">
 		<div class="field">
 			<label>Page content</label>
@@ -27,6 +33,6 @@
 			<label>Reason for edit</label>
             <input id="edit-reason" name="edit-reason" type="text">
 		</div>
-		<input class="ui primary button" type="submit" value="Edit">
+		<input class="ui {% if not session.google_user %}disabled {% endif %}primary button" type="submit" value="Edit">
 	</form>
 {% endblock %}

@@ -60,6 +60,9 @@ def page_edit(page_name):
 		
 		return flask.render_template('page_edit.html', page=page)
 	else:
+		if 'google_user' not in flask.session:
+			return flask.abort(403)
+		
 		page_json = mongo.db.pages.find_one({'name': page_name})
 		if page_json is None:
 			page = revisionbank.page.Page(name=page_name)
