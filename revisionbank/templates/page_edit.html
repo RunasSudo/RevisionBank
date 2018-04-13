@@ -35,4 +35,15 @@
 		</div>
 		<input class="ui {% if not session.google_user %}disabled {% endif %}primary button" type="submit" value="Edit">
 	</form>
+	
+	<script>
+		// Allow tabs
+		document.getElementById('page-content').addEventListener('keydown', function(e) {
+			if (e.keyCode === 9) {
+				this.value = this.value.substring(0, this.selectionStart) + "\t" + this.value.substring(this.selectionEnd);
+				this.selectionStart = this.selectionEnd = this.selectionStart + 1;
+				e.preventDefault();
+			}
+		});
+	</script>
 {% endblock %}

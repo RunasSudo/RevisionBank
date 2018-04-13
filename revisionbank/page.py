@@ -20,6 +20,7 @@ import jinja2
 import mwparserfromhell as mw
 import pytz
 import re
+import types
 
 class MongoObject:
 	@classmethod
@@ -57,11 +58,11 @@ class Page(BasePage):
 	@classmethod
 	def from_json(cls, json_obj):
 		obj = Page(**json_obj)
-		obj.revisions = [RevisionMarkdown.from_json(r, obj) for r in obj.revisions]
+		obj.revisions = [revision_types[r['type']].from_json(r, obj) for r in obj.revisions]
 		return obj
 
 class Revision(MongoObject):
-	def __init__(self, page=None, creator=None, creation_date=None, reason=None):
+	def __init__(self, type=None, page=None, creator=None, creation_date=None, reason=None):
 		self.page = page
 		
 		self.creator = creator
@@ -122,5 +123,25 @@ class RevisionMarkdown(Revision):
 	
 	def to_json(self):
 		json_obj = super().to_json()
-		json_obj.update({'content': self.content})
+		json_obj.update({'type': 'markdown', 'content': self.content})
 		return json_obj
+
+class RevisionScript(Revision):
+	def __init__(self, content=None, **kwargs):
+		super().__init__(**kwargs)
+		self.content = content
+	
+	def render_content(self):
+		context = types.ModuleType(self.page.name.split('/')[-1])
+		exec(self.content, context.__dict__)
+		return context.render()
+	
+	def to_json(self):
+		json_obj = super().to_json()
+		json_obj.update({'type': 'script', 'content': self.content})
+		return json_obj
+
+revision_types = {
+	'markdown': RevisionMarkdown,
+	'script': RevisionScript
+}

@@ -23,6 +23,8 @@ import revisionbank.page
 import revisionbank.user
 
 from datetime import datetime
+import functools
+import hashlib
 import os
 import pytz
 
@@ -35,10 +37,35 @@ mongo = PyMongo(app)
 
 @app.route('/')
 def index():
-	return flask.render_template('index.html')
+	page_json = mongo.db.pages.find_one({'name': 'Home'})
+	if page_json is None:
+		page = revisionbank.page.Page404(name=page_name)
+	else:
+		page = revisionbank.page.Page.from_json(page_json)
+	
+	revision = page.revisions[int(flask.request.args.get('revision', 0)) - 1]
+	
+	return flask.render_template('index.html', page=page, revision=revision)
+
+def sanitise_page_name(viewfunc):
+	@functools.wraps(viewfunc)
+	def wrapper(page_name):
+		if page_name != page_name.strip():
+			return flask.redirect(flask.url_for(viewfunc, page_name=page_name.strip()))
+		if page_name.endswith('/'):
+			return flask.redirect(flask.url_for(viewfunc, page_name=page_name[:-1]))
+		
+		return viewfunc(page_name)
+	return wrapper
 
 @app.route('/page/<path:page_name>')
+@sanitise_page_name
 def page_view(page_name):
+	if page_name != page_name.strip():
+		return flask.redirect(flask.url_for('page_view', page_name=page_name.strip()))
+	if page_name.endswith('/'):
+		return flask.redirect(flask.url_for('page_view', page_name=page_name[:-1]))
+	
 	page_json = mongo.db.pages.find_one({'name': page_name})
 	if page_json is None:
 		page = revisionbank.page.Page404(name=page_name)
@@ -50,6 +77,7 @@ def page_view(page_name):
 	return flask.render_template('page.html', page=page, revision=revision)
 
 @app.route('/page/<path:page_name>/edit', methods=['GET', 'POST'])
+@sanitise_page_name
 def page_edit(page_name):
 	if flask.request.method == 'GET':
 		page_json = mongo.db.pages.find_one({'name': page_name})
@@ -69,7 +97,19 @@ def page_edit(page_name):
 		else:
 			page = revisionbank.page.Page.from_json(page_json)
 		
-		revision = revisionbank.page.RevisionMarkdown(creator=current_user(), creation_date=pytz.utc.localize(datetime.utcnow()), content=flask.request.form['page-content'], reason=flask.request.form['edit-reason'])
+		if page_name.startswith('Script:'):
+			tmp = hashlib.sha256()
+			tmp.update(flask.session['google_user']['email'].encode('utf-8'))
+			if tmp.hexdigest() != 'd86022c789a8523589a3a2e0ed7db52e33bae0bb56ef5cd03bcb9be35783044c':
+				return flask.abort(403)
+			revision = revisionbank.page.RevisionScript()
+		else:
+			revision = revisionbank.page.RevisionMarkdown()
+		
+		revision.creator = current_user()
+		revision.creation_date = pytz.utc.localize(datetime.utcnow())
+		revision.content = flask.request.form['page-content']
+		revision.reason = flask.request.form['edit-reason']
 		
 		page.revisions.append(revision)
 		
@@ -78,6 +118,7 @@ def page_edit(page_name):
 		return flask.redirect(flask.url_for('page_view', page_name=page_name))
 
 @app.route('/page/<path:page_name>/history')
+@sanitise_page_name
 def page_history(page_name):
 	page_json = mongo.db.pages.find_one({'name': page_name})
 	if page_json is None:
