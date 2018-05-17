@@ -14,6 +14,8 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import revisionbank.scripts
+
 from datetime import datetime
 import flask
 import jinja2
@@ -104,21 +106,48 @@ class RevisionMarkdown(Revision):
 		super().__init__(**kwargs)
 		self.content = content
 	
-	def render_node(self, node):
-		if isinstance(node, mw.nodes.text.Text):
-			markup = jinja2.Markup('<p>') + jinja2.escape(node.value) + jinja2.Markup('</p>')
-			markup = markup_delimtag('***', '<b><i>', '</i></b>', markup)
-			markup = markup_delimtag('**', '<b>', '</b>', markup)
-			markup = markup_delimtag('*', '<i>', '</i>', markup)
-		elif isinstance(node, mw.wikicode.Wikicode):
-			markup = jinja2.Markup()
-			for subnode in node.ifilter():
-				markup += self.render_node(subnode)
-		return markup
-	
 	def render_content(self):
-		wikitext = mw.parse(self.content)
-		markup = self.render_node(wikitext)
+		paragraphs = self.content.split('\n\n')
+		
+		markup = jinja2.Markup()
+		for paragraph in paragraphs:
+			wikitext = mw.parse(paragraph)
+			nodes = wikitext.filter(recursive=False)
+			
+			# If contains text, then this is a paragraph
+			is_text = any(isinstance(node, mw.nodes.text.Text) for node in nodes)
+			if is_text:
+				markup += jinja2.Markup('<p>')
+			
+			# Walk and render nodes
+			for node in nodes:
+				nmarkup = jinja2.Markup()
+				
+				if isinstance(node, mw.nodes.text.Text):
+					nmarkup = jinja2.escape(node.value)
+					nmarkup = markup_delimtag('***', '<b><i>', '</i></b>', nmarkup)
+					nmarkup = markup_delimtag('**', '<b>', '</b>', nmarkup)
+					nmarkup = markup_delimtag('*', '<i>', '</i>', nmarkup)
+				elif isinstance(node, mw.nodes.template.Template):
+					pagescript_json = flask.current_app.mongo.db.pages.find_one({'name': 'Script:' + str(node.name)})
+					
+					if pagescript_json is None:
+						if str(node.name) in revisionbank.scripts.builtin_scripts:
+							script = revisionbank.scripts.builtin_scripts[str(node.name)]
+							nmarkup = script.render(self, node)
+						else:
+							nmarkup = jinja2.Markup('<b>Unknown script {}</b>').format(str(node.name))
+					else:
+						pagescript = Page.from_json(pagescript_json)
+						revision = pagescript.revisions[-1]
+						script = revision.script
+						nmarkup = script.render(self, node)
+				
+				markup += nmarkup
+			
+			if is_text:
+				markup += jinja2.Markup('</p>')
+		
 		return markup
 	
 	def to_json(self):
@@ -131,10 +160,16 @@ class RevisionScript(Revision):
 		super().__init__(**kwargs)
 		self.content = content
 	
+	@property
+	def script(self):
+		context_dict = {}
+		exec(self.content, {}, context_dict)
+		context = type(self.page.name.split('/')[-1], (revisionbank.scripts.Script,), context_dict)
+		return context
+	
 	def render_content(self):
-		context = types.ModuleType(self.page.name.split('/')[-1])
-		exec(self.content, context.__dict__)
-		return context.render()
+		import pygments, pygments.lexers, pygments.formatters
+		return jinja2.Markup(pygments.highlight(self.content, pygments.lexers.PythonLexer(), pygments.formatters.HtmlFormatter()) + '<style type="text/css">' + pygments.formatters.HtmlFormatter().get_style_defs('.highlight') + '</style>')
 	
 	def to_json(self):
 		json_obj = super().to_json()
