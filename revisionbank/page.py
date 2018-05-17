@@ -41,7 +41,7 @@ class BasePage(MongoObject):
 class Page404(BasePage):
 	@property
 	def revisions(self):
-		return [Revision404(self)]
+		return [Revision404(page=self)]
 
 class Page(BasePage):
 	def __init__(self, _id=None, revisions=None, **kwargs):
@@ -62,7 +62,7 @@ class Page(BasePage):
 		return obj
 
 class Revision(MongoObject):
-	def __init__(self, type=None, page=None, creator=None, creation_date=None, reason=None):
+	def __init__(self, page=None, creator=None, creation_date=None, reason=None, type=None):
 		self.page = page
 		
 		self.creator = creator

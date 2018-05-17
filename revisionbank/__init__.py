@@ -34,12 +34,13 @@ if 'REVBANK_SETTINGS' in os.environ:
 	app.config.from_envvar('REVBANK_SETTINGS')
 
 mongo = PyMongo(app)
+app.mongo = mongo
 
 @app.route('/')
 def index():
 	page_json = mongo.db.pages.find_one({'name': 'Home'})
 	if page_json is None:
-		page = revisionbank.page.Page404(name=page_name)
+		page = revisionbank.page.Page404(name='Home')
 	else:
 		page = revisionbank.page.Page.from_json(page_json)
 	
@@ -108,7 +109,7 @@ def page_edit(page_name):
 		
 		revision.creator = current_user()
 		revision.creation_date = pytz.utc.localize(datetime.utcnow())
-		revision.content = flask.request.form['page-content']
+		revision.content = flask.request.form['page-content'].replace('\r\n', '\n')
 		revision.reason = flask.request.form['edit-reason']
 		
 		page.revisions.append(revision)
